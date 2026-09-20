@@ -164,6 +164,17 @@ export const Login = () => {
               </button>
 
               <button
+                onClick={() => loginAsDemo('finance_officer')}
+                className="w-full text-left p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition flex items-center justify-between group"
+              >
+                <div>
+                  <div className="text-sm font-semibold text-slate-800 group-hover:text-blue-600">Finance Officer</div>
+                  <div className="text-xs text-slate-500">Ahmedabad PIU • Financial Scrutiny & Tax Deductions</div>
+                </div>
+                <Building2 className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
+              </button>
+
+              <button
                 onClick={() => loginAsDemo('regional_officer')}
                 className="w-full text-left p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition flex items-center justify-between group"
               >

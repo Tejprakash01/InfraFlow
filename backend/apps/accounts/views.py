@@ -12,9 +12,16 @@ class LoginView(APIView):
     def post(self, request):
         serializer = UserLoginSerializer(data=request.data)
         if serializer.is_valid():
-            username = serializer.validated_data['username']
+            login_id = serializer.validated_data['username'].strip()
             password = serializer.validated_data['password']
-            user = authenticate(username=username, password=password)
+
+            # Resolve email to username if an email address is provided
+            if '@' in login_id:
+                user_obj = User.objects.filter(email__iexact=login_id).first()
+                if user_obj:
+                    login_id = user_obj.username
+
+            user = authenticate(username=login_id, password=password)
             if user:
                 refresh = RefreshToken.for_user(user)
                 return Response({
