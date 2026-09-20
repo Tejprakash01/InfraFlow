@@ -108,6 +108,20 @@ class GovernmentFileViewSet(viewsets.ModelViewSet):
             file_obj.status = FileStatus.FORWARDED
             file_obj.save()
 
+            # Synchronize linked RA Bill status along the workflow chain
+            if hasattr(file_obj, 'linked_bill') and file_obj.linked_bill:
+                from apps.billing.models import BillStatus
+                bill = file_obj.linked_bill
+                if to_user.role == 'FINANCE_OFFICER':
+                    bill.status = BillStatus.FINANCE_REVIEW
+                elif to_user.role in ['PROJECT_DIRECTOR', 'REGIONAL_OFFICER']:
+                    bill.status = BillStatus.AUTHORITY_APPROVAL
+                elif to_user.is_contractor_user:
+                    bill.status = BillStatus.RETURNED
+                elif to_user.role == 'AUTHORITY_ENGINEER':
+                    bill.status = BillStatus.TECHNICAL_VERIFICATION
+                bill.save()
+
         return Response(GovernmentFileSerializer(file_obj).data)
 
     @action(detail=True, methods=['post'])
@@ -130,6 +144,31 @@ class GovernmentFileViewSet(viewsets.ModelViewSet):
             
             file_obj.status = FileStatus.APPROVED if decision_type == DecisionTypeChoices.APPROVED else FileStatus.REJECTED
             file_obj.save()
+
+            # Advance linked RA Bill and disburse payment record upon approval
+            if hasattr(file_obj, 'linked_bill') and file_obj.linked_bill:
+                from apps.billing.models import BillStatus
+                from apps.payments.models import Payment, PaymentStatus
+                bill = file_obj.linked_bill
+                if decision_type == DecisionTypeChoices.APPROVED:
+                    bill.status = BillStatus.PAID
+                    bill.save()
+
+                    Payment.objects.get_or_create(
+                        bill=bill,
+                        defaults={
+                            'payment_reference': f"PFMS-{bill.bill_number}",
+                            'utr_number': f"UTR{bill.bill_number.replace('-', '')}",
+                            'amount': bill.net_amount,
+                            'payment_date': timezone.now().date(),
+                            'payment_status': PaymentStatus.DISBURSED,
+                            'processed_by': request.user,
+                            'remarks': remarks
+                        }
+                    )
+                else:
+                    bill.status = BillStatus.REJECTED
+                    bill.save()
 
         return Response(GovernmentFileSerializer(file_obj).data)
 
