@@ -4,292 +4,147 @@
 
 ---
 
+### 🌐 Live Demo & Important Notice
+
+- **Frontend Application:** [https://infraflow-frontend.onrender.com](https://infraflow-frontend.onrender.com)
+- **Backend API & Swagger:** [https://infraflow-backend-01ke.onrender.com/api/schema/swagger-ui/](https://infraflow-backend-01ke.onrender.com/api/schema/swagger-ui/)
+
+> ⏳ **Note on Render Free Tier (Cold Starts):**  
+> Because the backend is hosted on Render's free tier, the service automatically spins down after periods of inactivity. **The first request (such as logging in or fetching data) may take 50–60 seconds to wake up the server.** Once awake, all requests respond instantly.
+
+---
+
 ## 🏛️ What is InfraFlow?
 
-**InfraFlow** is a full-stack enterprise web platform that digitises the operational core of a Government Infrastructure Authority. It replaces paper-based file movement, manual RA bill processing, and siloed spreadsheet tracking with a unified, role-aware portal for:
-
-- **Government Officers** — receive files, write note sheets, forward for approval, sanction bills
-- **Project Directors** — oversee construction progress, review quality reports, approve payments
-- **Contractors** — submit RA bills, upload drawings, request inspections (RFIs), close NCRs
-- **Consultants** — review quality, certify measurements, raise non-conformance reports
-- **Super Admin** — manage all users, organisations, workflows, SLAs, and audit trails
+InfraFlow replaces paper note sheets, physical movement registers, and spreadsheet tracking with an integrated, role-based platform:
+- **Contractors:** Upload documents, submit Running Account (RA) bills, raise Requests for Inspection (RFIs), and resolve Non-Conformance Reports (NCRs).
+- **Authority Engineers:** Verify site measurements, inspect works, append note sheets, and forward files.
+- **Finance & Executive Authorities (PD / RO):** Scrutinise invoices, sanction files, approve payments, and track portfolio SLAs.
+- **Super Admin:** Centrally manage users, departments, custom workflows, SLA thresholds, and audit logs.
 
 ---
 
-## 🚀 Key Features
+## 🔄 Lifecycle Flow: Contractor ⇄ Higher Authorities
 
-| Domain | Features |
-|---|---|
-| **Government File Engine** | Immutable note sheets, movement history, parallel consultation, recommendations, approval & sanction |
-| **Configurable Workflow Engine** | Data-driven multi-stage approval routes — sequential, parallel, monetary-threshold conditional routing, returns, SLA escalation |
-| **Admin Portal** | Super Admin dashboard — user management, org hierarchy, workflow definitions, SLA rules, security audit logs |
-| **Contractor Portal** | Submit RA bills, upload project documents (drawings, test reports, measurements), raise RFIs, close NCRs |
-| **Digital RA Billing** | 11-step bill processing — contractor submission → document check → measurement verification → PD certification → finance scrutiny → authority approval → payment |
-| **Quality & Compliance** | RFI register, Site Inspection verification, Non-Conformance Reports (NCRs), Extension of Time (EOT), Contract Variations |
-| **Government Work Desk** | Personalised landing desk — pending files, SLA aging, overdue warnings, bottleneck tracking |
-| **Executive Dashboard** | Portfolio KPIs, physical vs financial progress charts, SLA breach counts |
-| **Document Repository** | Versioned DMS for contracts, engineering drawings, test certificates, measurement sheets, official correspondence |
-| **Audit & Security** | Append-only tamper-proof audit trail, document versioning, server-side scope-based RBAC |
+InfraFlow implements strict **two-way (bidirectional)** government workflow protocols. Requests and documents move up the chain of command for sanction, and can be returned down the chain with remarks for clarification or rectification:
+
+```
+▲ UPWARD APPROVAL FLOW (Submission & Verification)
+──────────────────────────────────────────────────────────────────────────────────
+[Contractor]              [Authority Engineer]          [Finance / PD]            [Bank / PFMS]
+     │                             │                           │                        │
+     ├─ 1. Submits RA Bill / ─────►│                           │                        │
+     │     RFI / Document          ├─ 2. Scrutiny & ──────────►│                        │
+     │                             │     Measurement           ├─ 3. Financial Check    │
+     │                             │     Verification          │     & Final Sanction   │
+     │                             │     (Appends Note)        │     (Appends Note)     │
+     │                             │                           │                        │
+     │                             │                           ├─ 4. Issue Payment ────►│
+     │                             │                           │    Sanction Order      │
+──────────────────────────────────────────────────────────────────────────────────
+▼ DOWNWARD RETURN FLOW (Objections, Clarifications & Resubmission)
+──────────────────────────────────────────────────────────────────────────────────
+[Contractor]              [Authority Engineer]          [Higher Authority]
+     │                             │                           │
+     │                             │◄── Returns with Query ────┤ (e.g., Budget Mismatch
+     │                             │    or Objection           │  or Missing Drawing)
+     │◄── Returns File / RFI ──────┤
+     │    with Rectification Note  │
+     │                             │
+     ├─ Rectifies & Resubmits ────►│ (Resumes verification cycle)
+```
+
+### Flow Breakdown:
+1. **Initiation (Contractor):** Contractor submits an RA bill, drawing, RFI, or variation order via the Contractor Portal. An official digital **Government File** is automatically created with an immutable tracking number.
+2. **Technical Scrutiny (Authority Engineer):** The designated engineer visits the work site, checks quality and physical measurements against BOQ items, adds an official **Note Sheet**, and forwards the file upwards.
+3. **Executive Approval & Sanction (Project Director / Regional Officer):** The Competent Authority reviews notes, verifies compliance against SLA timelines, and records an official sanction decision (**APPROVE**, **RETURN**, or **REJECT**).
+4. **Return & Resubmission Loop:** If any discrepancy is found at any stage, the authority can **Return with Remarks**. The file rolls back to the previous desk or contractor with an objection note sheet. Once corrected, it is resubmitted along the same audit chain.
+5. **Settlement & Audit:** Upon final approval, an automated disbursement advice is registered in the Payments log, and every action is sealed into an append-only, tamper-proof **Audit Trail**.
 
 ---
 
-## 🛠️ Complete Technology Stack
+## 🔐 Demo User Credentials
 
-### Backend
+All demo accounts share the password: **`DemoPass123!`**  
+*(You can also click the quick 1-click login preset buttons on the Login page)*
 
-| Component | Technology | Version |
+| Role | Username | Primary Responsibilities |
 |---|---|---|
-| Web Framework | **Django** | 5.0.x |
-| REST API | **Django REST Framework (DRF)** | 3.14+ |
-| Authentication | **SimpleJWT** (stateless JWT tokens) | 5.3.x |
-| API Documentation | **drf-spectacular** (OpenAPI 3.0 / Swagger UI) | 0.27.x |
-| Database ORM | Django ORM with PostgreSQL adapter | — |
-| Database | **PostgreSQL** (UUIDs, NUMERIC, JSONB) | 16 |
-| Async Task Queue | **Celery** | 5.3.x |
-| Message Broker / Cache | **Redis** | 7 / 5.0.x |
-| File Storage | **Pillow** + abstracted `StorageService` (local / S3-compatible) | 10.2.x |
-| HTTP Client | **Requests** (integration adapters) | 2.31.x |
-| CORS | **django-cors-headers** | 4.3.x |
-| Production Server | **Gunicorn** (WSGI) | 21.2.x |
-| Static Files | **WhiteNoise** | 6.6.x |
-| DB URL Parsing | **dj-database-url** | 2.1.x |
-| Env Management | **python-dotenv** | 1.0.x |
+| **System Super Admin** | `admin` | Full system control: users, org hierarchy, SLA rules, audit logs |
+| **Project Director** | `project_director` | Approving authority: sanction bills, issue approvals, PIU oversight |
+| **Authority Engineer** | `authority_engineer` | Site scrutiny: verify measurements, inspect quality, forward files |
+| **Regional Officer** | `regional_officer` | Executive oversight: monitor regional bottlenecks & SLA escalations |
+| **Contractor PM** | `contractor_pm` | Execution: submit RA bills, upload drawings, raise RFIs |
 
-### Frontend
+---
 
-| Component | Technology | Version |
+## 🛠️ Technology Stack
+
+| Layer | Tech | Key Role |
 |---|---|---|
-| UI Framework | **React** | 18.2.x |
-| Build Tool | **Vite** | 5.1.x |
-| Routing | **React Router DOM** | v6.22.x |
-| HTTP Client | **Axios** | 1.6.x |
-| UI Icons | **Lucide React** | 0.359.x |
-| Charts | **Recharts** | 2.12.x |
-| Styling | **Tailwind CSS** | 3.4.x |
-| CSS Tooling | PostCSS + Autoprefixer | — |
-
-### Infrastructure & Deployment
-
-| Component | Technology |
-|---|---|
-| Containerisation | **Docker** + **Docker Compose** |
-| Production Hosting | **Render** (render.yaml blueprint) |
-| Database Hosting | Render Managed PostgreSQL |
-| Dev Database | SQLite (local no-docker mode) |
+| **Frontend** | React 18 + Vite | Fast single-page application with responsive light design |
+| **Styling** | Tailwind CSS + Lucide Icons | Clean government-standard UI components and data tables |
+| **Charts** | Recharts | Physical vs. financial progress analytics & SLA metrics |
+| **Backend** | Django 5.0 + Django REST Framework | 18 domain-bounded modular apps with strict RBAC |
+| **Security** | SimpleJWT | Stateless token authentication with request interceptors |
+| **Database** | PostgreSQL | Relational storage for projects, bills, files, and audit records |
+| **Static Hosting**| WhiteNoise + Gunicorn | Production-grade WSGI serving on cloud infrastructure |
+| **Cloud Hosting**| Render | Automated multi-service deployment (Postgres + Django + React) |
 
 ---
 
-## 🗂️ Repository Structure
+## 🚀 Local Quickstart
 
-```
-Pravi hackathon/
-├── backend/
-│   ├── config/
-│   │   ├── settings/
-│   │   │   ├── base.py          # Shared settings (apps, middleware, auth, JWT)
-│   │   │   ├── development.py   # SQLite, DEBUG=True, console email
-│   │   │   └── production.py    # PostgreSQL, WhiteNoise, Redis, S3
-│   │   ├── urls.py              # Root URL routing + API versioning (/api/v1/)
-│   │   ├── wsgi.py
-│   │   └── asgi.py
-│   ├── apps/
-│   │   ├── accounts/            # Custom User model, JWT auth, role/designation
-│   │   ├── organizations/       # Org hierarchy (HQ → Regional → PIU → Contractor)
-│   │   ├── projects/            # Projects, team assignments, BOQ, seed_demo command
-│   │   ├── contracts/           # Contract metadata, BOQ items, variation orders
-│   │   ├── files/               # GovernmentFile, NoteSheet, Movement, Decisions
-│   │   ├── workflows/           # WorkflowDefinition, Steps, Transitions, SLA policies
-│   │   ├── documents/           # Document metadata, versioning, StorageService
-│   │   ├── communications/      # Project correspondence and communication records
-│   │   ├── monitoring/          # WorkPackages, progress %, milestones
-│   │   ├── quality/             # Inspection, RFI, NCR, Variation, EOT
-│   │   ├── billing/             # Measurements, RA Bills, 11-step bill workflow
-│   │   ├── payments/            # Payment records, mock payment gateway adapter
-│   │   ├── tasks/               # Celery task definitions (SLA checks, notifications)
-│   │   ├── audit/               # Append-only AuditLog — immutable action records
-│   │   ├── notifications/       # In-app notifications + email dispatch
-│   │   ├── reports/             # Aggregation views (Executive Dashboard, Work Desk)
-│   │   └── integrations/        # Mock adapters (PFMS, eOffice, eProcurement, eSign)
-│   ├── Dockerfile
-│   └── requirements.txt
-│
-├── frontend/
-│   ├── src/
-│   │   ├── api/
-│   │   │   └── client.js        # Axios instance + all API method definitions
-│   │   ├── components/
-│   │   │   ├── Navbar.jsx       # Top navigation bar (light theme)
-│   │   │   └── Sidebar.jsx      # Role-aware navigation sidebar
-│   │   ├── context/
-│   │   │   └── AuthContext.jsx  # JWT auth state, login/logout, user object
-│   │   ├── pages/
-│   │   │   ├── Login.jsx            # Login form + 1-click demo presets
-│   │   │   ├── WorkDesk.jsx         # Government officer's file inbox
-│   │   │   ├── ExecutiveDashboard.jsx # KPIs + Recharts progress chart
-│   │   │   ├── ProjectList.jsx      # Infrastructure project cards
-│   │   │   ├── ProjectDetail.jsx    # Project detail + work packages table
-│   │   │   ├── FileList.jsx         # Government files repository
-│   │   │   ├── FileDetail.jsx       # File detail — note sheets, movements, sanctions
-│   │   │   ├── BillsList.jsx        # RA Bills table + submit new bill modal
-│   │   │   ├── RFIsList.jsx         # Request For Inspection register
-│   │   │   ├── NCRsList.jsx         # Non-Conformance Report register
-│   │   │   ├── ContractorDashboard.jsx # Contractor metrics + bill tracker
-│   │   │   ├── DocumentManager.jsx  # Document upload + versioned repository
-│   │   │   └── AdminPanel.jsx       # Super Admin — 6-tab master control panel
-│   │   ├── App.jsx              # Route definitions + protected layout wrapper
-│   │   ├── main.jsx
-│   │   └── index.css            # Tailwind directives + custom design tokens
-│   ├── Dockerfile
-│   ├── package.json
-│   └── vite.config.js
-│
-├── docker-compose.yml           # Local stack: backend + frontend + postgres + redis
-├── render.yaml                  # Render.com 1-click deployment blueprint
-├── .env.example                 # Environment variables template
-├── architecture.md              # High-level system architecture
-└── README.md
-```
+### Prerequisites
+- Python 3.11+
+- Node.js 18+
 
----
-
-## 🔐 User Roles & Demo Accounts
-
-All demo accounts use the same password: **`DemoPass123!`**
-
-| Username | Role | Portal | Access Level |
-|---|---|---|---|
-| `admin` | **SUPER_ADMIN** | Admin Portal | All users, orgs, workflows, audit logs |
-| `project_director` | **PROJECT_DIRECTOR** | Work Desk | Approve bills, sanction files, manage PIU |
-| `authority_engineer` | **AUTHORITY_ENGINEER** | Work Desk | Technical scrutiny, measurement verification |
-| `regional_officer` | **REGIONAL_OFFICER** | Executive Dashboard | Regional SLA oversight, escalation management |
-| `contractor_pm` | **CONTRACTOR_PROJECT_MANAGER** | Contractor Portal | Submit bills, upload documents, raise RFIs |
-
-> Quick-login preset buttons are available directly on the Login page — no manual credential entry required for demos.
-
----
-
-## ⚙️ Core Workflow — Government File & RA Bill Lifecycle
-
-```
-CONTRACTOR                    GOVERNMENT OFFICERS                    AUTHORITY
-─────────                     ──────────────────                     ─────────
-
-Submit RA Bill ─────────────► File Created (AUTO)
-                               │
-                               ▼
-                         Authority Engineer
-                         ├── Verify Measurements
-                         ├── Write Note Sheet
-                         └── Forward ──────────────────────────────► Finance Officer
-                                                                       ├── Scrutinise Bill
-                                                                       ├── Write Note Sheet
-                                                                       └── Forward ────────► Project Director
-                                                                                              ├── Review & Certify
-                                                                                              ├── Write Note Sheet
-                                                                                              └── APPROVE & SANCTION
-                                                                                                   │
-                                                                       Payment Record ◄────────────┘
-                                                                       (PAID status)
-```
-
-### SLA Engine
-- Each workflow step has configurable **warning** and **escalation** time thresholds
-- Overdue files are flagged `OVERDUE` in the Work Desk and Executive Dashboard
-- Celery background tasks run periodic SLA breach checks and dispatch notifications
-
----
-
-## 💻 Local Development Setup
-
-### Option A — Without Docker (Recommended for development)
-
-**Backend:**
+### 1. Backend Setup
 ```bash
 cd backend
 python -m venv venv
-venv\Scripts\activate          # Windows
+venv\Scripts\activate          # On Windows (use: source venv/bin/activate on Linux/Mac)
 pip install -r requirements.txt
-cp ../.env.example .env
 python manage.py migrate
-python manage.py seed_demo     # Creates all demo users, projects, files, bills
+python manage.py seed_demo     # Populates all demo users, projects, files & bills
 python manage.py runserver 0.0.0.0:8000
 ```
 
-**Frontend (separate terminal):**
+### 2. Frontend Setup (in a separate terminal)
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Access at: **http://localhost:5173**
+Visit **`http://localhost:5173`** to access the local portal.
 
 ---
 
-### Option B — Docker Compose (Full stack)
+## 📁 Core Repository Layout
 
-```bash
-# Copy environment config
-cp .env.example .env
-
-# Build and launch all containers (backend + frontend + postgres + redis)
-docker compose up --build
-
-# In a separate terminal — run migrations and seed data
-docker compose exec backend python manage.py migrate
-docker compose exec backend python manage.py seed_demo
 ```
-
-| Service | URL |
-|---|---|
-| Frontend App | http://localhost:5173 |
-| Backend API | http://localhost:8000/api/v1/ |
-| Swagger UI (API Docs) | http://localhost:8000/api/schema/swagger-ui/ |
-| Health Check | http://localhost:8000/api/v1/health/ |
-| Django Admin | http://localhost:8000/admin/ |
-
----
-
-## 🌐 API Overview
-
-All endpoints are versioned under `/api/v1/` and require JWT Bearer authentication except `/api/v1/auth/login/`.
-
-| Endpoint Group | Path |
-|---|---|
-| Authentication | `/api/v1/auth/login/` · `/api/v1/auth/refresh/` |
-| Users & Accounts | `/api/v1/users/` |
-| Organizations | `/api/v1/organizations/` |
-| Projects | `/api/v1/projects/` |
-| Government Files | `/api/v1/files/` · `/api/v1/files/{id}/forward/` · `/api/v1/files/{id}/approve/` |
-| RA Bills | `/api/v1/bills/` |
-| Documents | `/api/v1/documents/` |
-| RFIs | `/api/v1/rfis/` |
-| NCRs | `/api/v1/ncrs/` |
-| Workflows | `/api/v1/workflows/` |
-| SLA Policies | `/api/v1/slas/` |
-| Audit Logs | `/api/v1/audit/` |
-| Notifications | `/api/v1/notifications/` |
-| Dashboards | `/api/v1/reports/work-desk/` · `/api/v1/reports/executive/` · `/api/v1/reports/contractor/` |
-| Health | `/api/v1/health/` |
-
-Full interactive API documentation: **http://localhost:8000/api/schema/swagger-ui/**
-
----
-
-## ☁️ Deployment on Render
-
-The `render.yaml` blueprint provisions the full production stack on [Render.com](https://render.com) in one click:
-
-1. Push repository to GitHub
-2. Go to Render → **New Blueprint Instance** → select repo
-3. Render automatically provisions:
-   - **PostgreSQL Database** (managed, persistent)
-   - **Django Web Service** (Gunicorn + WhiteNoise static files)
-   - **React Static Site** (Vite production build via CDN)
-4. Verify: `https://<your-backend>.onrender.com/api/v1/health/`
+├── backend/
+│   ├── apps/
+│   │   ├── accounts/          # User authentication & RBAC roles
+│   │   ├── billing/           # RA bills, items, measurements & invoices
+│   │   ├── files/             # Digital government files & note sheets
+│   │   ├── projects/          # Projects, milestones, seed commands
+│   │   ├── quality/           # RFIs, Site inspections, NCRs
+│   │   ├── workflows/         # Approval steps & SLA escalation rules
+│   │   └── audit/             # Immutable action logs
+│   ├── config/                # Django project settings & URLs
+│   └── build.sh               # Cloud build & migration script
+├── frontend/
+│   └── src/
+│       ├── api/client.js      # Axios client with JWT auto-injection
+│       ├── pages/             # Role portals: Admin, Work Desk, Contractor, etc.
+│       └── components/        # Navigation bars, sidebars, badges, modals
+├── render.yaml                # Render Blueprint deployment configuration
+└── architecture.md            # In-depth architectural blueprint
+```
 
 ---
 
 ## 📜 Disclaimer
-
-*InfraFlow is a conceptual demonstration platform. It is not legally equivalent to official Indian Government systems (e-Office, PFMS, eProcurement, GeM, Aadhaar eSign). All data is fictional and labeled as DEMO. Integration adapters are mock implementations.*
+*InfraFlow is a conceptual demonstration platform built for hackathon evaluation. Integration adapters (PFMS, e-Office, Aadhaar eSign) are mock implementations. All sample project data, bill numbers, and personnel names are fictional and intended solely for demo purposes.*
