@@ -31,3 +31,4 @@ class BillSerializer(serializers.ModelSerializer):
             'bill_period_start', 'bill_period_end', 'gross_amount', 'deductions_amount',
             'net_amount', 'status', 'submitted_by', 'submitted_by_name', 'items', 'created_at'
         ]
+        read_only_fields = ['id', 'bill_number', 'government_file', 'submitted_by', 'status', 'created_at']

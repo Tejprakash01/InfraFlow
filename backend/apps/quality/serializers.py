@@ -14,6 +14,7 @@ class RFISerializer(serializers.ModelSerializer):
     class Meta:
         model = RFI
         fields = '__all__'
+        read_only_fields = ['id', 'rfi_number', 'created_by', 'status', 'created_at']
 
 class NCRSerializer(serializers.ModelSerializer):
     created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
@@ -21,6 +22,7 @@ class NCRSerializer(serializers.ModelSerializer):
     class Meta:
         model = NCR
         fields = '__all__'
+        read_only_fields = ['id', 'ncr_number', 'created_by', 'status', 'created_at']
 
 class VariationSerializer(serializers.ModelSerializer):
     class Meta:

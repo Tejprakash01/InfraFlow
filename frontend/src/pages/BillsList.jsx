@@ -86,7 +86,10 @@ export const BillsList = () => {
       setTimeout(() => setSuccessMsg(''), 4000);
     } catch (err) {
       console.error(err);
-      alert('Failed to submit bill. Please verify values.');
+      const errorDetail = err.response?.data
+        ? Object.entries(err.response.data).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(' ') : v}`).join(' | ')
+        : 'Please verify input values.';
+      alert(`Failed to submit bill: ${errorDetail}`);
     } finally {
       setSubmitting(false);
     }

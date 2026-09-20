@@ -12,10 +12,24 @@ class RFIViewSet(viewsets.ModelViewSet):
     serializer_class = RFISerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def perform_create(self, serializer):
+        count = RFI.objects.count() + 1
+        serializer.save(
+            created_by=self.request.user,
+            rfi_number=f"RFI-2026-{count:04d}"
+        )
+
 class NCRViewSet(viewsets.ModelViewSet):
     queryset = NCR.objects.all()
     serializer_class = NCRSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        count = NCR.objects.count() + 1
+        serializer.save(
+            created_by=self.request.user,
+            ncr_number=f"NCR-2026-{count:04d}"
+        )
 
 class VariationViewSet(viewsets.ModelViewSet):
     queryset = Variation.objects.all()
