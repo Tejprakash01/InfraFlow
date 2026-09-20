@@ -32,7 +32,7 @@ services:
     rootDir: frontend
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://infraflow-backend.onrender.com/api/v1
+        value: https://infraflow-backend-01ke.onrender.com/api/v1
 
 databases:
   # Managed PostgreSQL Database
