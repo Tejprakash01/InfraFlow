@@ -1,0 +1,35 @@
+# Python / Django
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+.pytest_cache/
+.coverage
+htmlcov/
+backend/staticfiles/
+backend/media/
+backend/celerybeat-schedule
+*.log
+
+# Node / React
+node_modules/
+frontend/dist/
+frontend/build/
+.npm
+*.log
+
+# Environment variables & secrets
+.env
+.env.local
+.env.production
+*.pem
+*.key
+
+# IDE & System
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+scratch/
