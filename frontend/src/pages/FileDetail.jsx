@@ -18,6 +18,7 @@ export const FileDetail = () => {
   // Modals & form state
   const [showForwardModal, setShowForwardModal] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
   
   const [forwardRecipient, setForwardRecipient] = useState('');
   const [forwardAction, setForwardAction] = useState('FORWARD');
@@ -26,6 +27,8 @@ export const FileDetail = () => {
   const [recommendation, setRecommendation] = useState('RECOMMEND_APPROVAL');
   
   const [approveRemarks, setApproveRemarks] = useState('');
+  const [rejectRemarks, setRejectRemarks] = useState('');
+  const [rejectReason, setRejectReason] = useState('Technical / Measurement Non-Compliance');
 
   const [newNoteContent, setNewNoteContent] = useState('');
   const [submittingNote, setSubmittingNote] = useState(false);
@@ -86,6 +89,20 @@ export const FileDetail = () => {
     }
   };
 
+  const handleRejectSubmit = async (e) => {
+    e.preventDefault();
+    if (!rejectRemarks.trim()) return alert('Please enter review remarks for rejection');
+    try {
+      const fullRemarks = `[REJECTION REVIEW - ${rejectReason.toUpperCase()}]: ${rejectRemarks}`;
+      await api.rejectFile(id, fullRemarks);
+      setShowRejectModal(false);
+      setRejectRemarks('');
+      fetchFile();
+    } catch (err) {
+      alert('Failed to record rejection decision');
+    }
+  };
+
   if (loading) return <div className="p-8 text-slate-500">Loading Official Government File...</div>;
   if (!file) return <div className="p-8 text-rose-600">File Record Not Found</div>;
 
@@ -114,7 +131,7 @@ export const FileDetail = () => {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
-            {isCurrentHolder && (
+            {isCurrentHolder && file.status !== 'APPROVED' && file.status !== 'REJECTED' && (
               <>
                 <button
                   onClick={() => setShowForwardModal(true)}
@@ -128,6 +145,13 @@ export const FileDetail = () => {
                   className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2.5 rounded-lg text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/20"
                 >
                   <CheckCircle2 className="w-4 h-4" /> Approve & Sanction
+                </button>
+
+                <button
+                  onClick={() => setShowRejectModal(true)}
+                  className="bg-rose-600 hover:bg-rose-500 text-white font-medium px-4 py-2.5 rounded-lg text-xs flex items-center gap-2 shadow-lg shadow-rose-600/20 transition"
+                >
+                  <XCircle className="w-4 h-4" /> Reject with Review
                 </button>
               </>
             )}
@@ -278,18 +302,22 @@ export const FileDetail = () => {
           {file.decisions?.length === 0 ? (
             <div className="text-sm text-slate-500 py-6 text-center">No final approval or rejection decisions recorded yet.</div>
           ) : (
-            file.decisions?.map((d) => (
-              <div key={d.id} className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-emerald-700 text-sm flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5" /> {d.decision_type}
-                  </span>
-                  <span className="text-xs text-slate-500">{new Date(d.timestamp).toLocaleString()}</span>
+            file.decisions?.map((d) => {
+              const isRejected = d.decision_type === 'REJECTED';
+              return (
+                <div key={d.id} className={`p-4 rounded-xl space-y-2 ${isRejected ? 'bg-rose-50 border border-rose-200' : 'bg-emerald-50 border border-emerald-200'}`}>
+                  <div className="flex items-center justify-between">
+                    <span className={`font-bold text-sm flex items-center gap-2 ${isRejected ? 'text-rose-700' : 'text-emerald-700'}`}>
+                      {isRejected ? <XCircle className="w-5 h-5 text-rose-600" /> : <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
+                      {d.decision_type}
+                    </span>
+                    <span className="text-xs text-slate-500">{new Date(d.timestamp).toLocaleString()}</span>
+                  </div>
+                  <div className="text-xs text-slate-600">Decision By: <span className="font-semibold text-slate-900">{d.decision_by_name}</span></div>
+                  <div className="text-sm text-slate-700 whitespace-pre-wrap">{d.remarks}</div>
                 </div>
-                <div className="text-xs text-slate-600">Approved By: <span className="font-semibold text-slate-900">{d.decision_by_name}</span></div>
-                <div className="text-sm text-slate-700">{d.remarks}</div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}
@@ -371,6 +399,56 @@ export const FileDetail = () => {
                 <button type="button" onClick={() => setShowApproveModal(false)} className="btn-secondary text-xs">Cancel</button>
                 <button type="submit" className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-lg text-xs">
                   Issue Official Approval
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Sanction Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white p-6 rounded-2xl max-w-lg w-full space-y-4 border border-rose-200 shadow-2xl">
+            <h3 className="text-lg font-bold text-rose-700 flex items-center gap-2">
+              <XCircle className="w-5 h-5 text-rose-600" /> Official File Rejection & Review
+            </h3>
+            <p className="text-xs text-slate-500">
+              Official review objections and non-compliance grounds will be registered into the audit log and the file marked as Rejected.
+            </p>
+            <form onSubmit={handleRejectSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase">Rejection Grounds / Category *</label>
+                <select
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-800 focus:outline-none focus:border-rose-500"
+                >
+                  <option value="Technical / Measurement Non-Compliance">Technical / Measurement Non-Compliance</option>
+                  <option value="Financial / Tax Scrutiny Discrepancy">Financial / Tax Scrutiny Discrepancy</option>
+                  <option value="Incomplete Documentation / Missing Drawings">Incomplete Documentation / Missing Drawings</option>
+                  <option value="Quality Test / Specification Failure">Quality Test / Specification Failure</option>
+                  <option value="Budget / Fund Allocation Exhausted">Budget / Fund Allocation Exhausted</option>
+                  <option value="Administrative / Competent Authority Disapproval">Administrative / Competent Authority Disapproval</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase">Department Review Remarks & Justification *</label>
+                <textarea
+                  value={rejectRemarks}
+                  onChange={(e) => setRejectRemarks(e.target.value)}
+                  rows={4}
+                  placeholder="Enter specific departmental review objections, observed discrepancies, or non-compliance clauses..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-800 focus:outline-none focus:border-rose-500"
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setShowRejectModal(false)} className="btn-secondary text-xs">Cancel</button>
+                <button type="submit" className="bg-rose-600 hover:bg-rose-500 text-white font-medium px-4 py-2 rounded-lg text-xs shadow-lg shadow-rose-600/20">
+                  Confirm Official Rejection
                 </button>
               </div>
             </form>
