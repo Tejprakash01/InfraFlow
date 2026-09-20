@@ -38,6 +38,26 @@ class BillViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             bill = serializer.save(submitted_by=user, bill_number=bill_number, status=BillStatus.SUBMITTED)
             
+            # Find the Authority Engineer for this project or PIU to assign file
+            from apps.accounts.models import RoleChoices, User
+            from apps.files.models import FileMovement
+            
+            authority_engineer = None
+            if bill.project:
+                authority_engineer = User.objects.filter(
+                    role=RoleChoices.AUTHORITY_ENGINEER,
+                    projectmember__project=bill.project
+                ).first()
+                if not authority_engineer and bill.project.piu:
+                    authority_engineer = User.objects.filter(
+                        role=RoleChoices.AUTHORITY_ENGINEER,
+                        organization=bill.project.piu
+                    ).first()
+            if not authority_engineer:
+                authority_engineer = User.objects.filter(role=RoleChoices.AUTHORITY_ENGINEER).first()
+
+            target_holder = authority_engineer or user
+
             # Automatically create/link a Government File for bill approval tracking
             govt_file = GovernmentFile.objects.create(
                 file_number=f"FILE-BILL-{bill_count:04d}",
@@ -46,11 +66,24 @@ class BillViewSet(viewsets.ModelViewSet):
                 file_type='BILL_SANCTION',
                 priority='HIGH',
                 originator=user,
-                current_holder=user,
-                status=FileStatus.REGISTERED
+                current_holder=target_holder,
+                current_department=target_holder.department if target_holder else None,
+                status=FileStatus.FORWARDED if authority_engineer else FileStatus.REGISTERED
             )
             bill.government_file = govt_file
             bill.save()
+
+            if authority_engineer:
+                FileMovement.objects.create(
+                    file=govt_file,
+                    from_user=user,
+                    to_user=authority_engineer,
+                    from_department=user.department,
+                    to_department=authority_engineer.department,
+                    action='SUBMITTED_FOR_VERIFICATION',
+                    remarks=f"RA Bill #{bill_number} submitted by Contractor for technical and measurement verification.",
+                    expected_action="Scrutinise measurements against BOQ and verify site progress."
+                )
 
     @action(detail=True, methods=['post'])
     def advance_status(self, request, pk=None):
