@@ -86,9 +86,16 @@ export const BillsList = () => {
       setTimeout(() => setSuccessMsg(''), 4000);
     } catch (err) {
       console.error(err);
-      const errorDetail = err.response?.data
-        ? Object.entries(err.response.data).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(' ') : v}`).join(' | ')
-        : 'Please verify input values.';
+      let errorDetail = 'Please verify input values.';
+      if (err.response?.data) {
+        if (typeof err.response.data === 'string') {
+          errorDetail = err.response.status === 500 ? 'Internal Server Error (500). Please retry.' : err.response.data;
+        } else if (typeof err.response.data === 'object') {
+          errorDetail = Object.entries(err.response.data)
+            .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(' ') : v}`)
+            .join(' | ');
+        }
+      }
       alert(`Failed to submit bill: ${errorDetail}`);
     } finally {
       setSubmitting(false);
